@@ -1,0 +1,16 @@
+region: eu-west-1
+
+vpc: 
+  securityGroupIds:
+    - sg-51901337
+  subnetIds:
+    - subnet-de2e77ba
+    - subnet-3f1c8767
+
+apiGatewayAliasUrl: app.uat.adesaglobal.com
+apiBasePath: awsservice
+apiGatewayDescription: awsservice Gateway
+
+gatewayResponseAllowOrigin: https://uat5253110.adesaworld.com
+gatewayResponseAllowHeaders: Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token
+gatewayResponseAllowMethods: GET,POST,PATCH,DELETE,PUT,OPTIONS

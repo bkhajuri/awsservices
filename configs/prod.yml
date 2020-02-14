@@ -1,0 +1,16 @@
+region: eu-west-1
+
+vpc:
+  securityGroupIds:
+    - sg-2bfa7b53
+  subnetIds:
+    - subnet-b62f3cff
+    - subnet-02e217009b3b2f784
+
+apiGatewayAliasUrl: app.adesaglobal.com
+apiBasePath: awsservice
+apiGatewayDescription: awsservice Gateway
+
+gatewayResponseAllowOrigin: https://adesaglobal.com
+gatewayResponseAllowHeaders: Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token
+gatewayResponseAllowMethods: GET,POST,PATCH,DELETE,PUT,OPTIONS

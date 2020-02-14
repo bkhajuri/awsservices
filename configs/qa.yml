@@ -1,0 +1,22 @@
+region: eu-west-1
+
+vpc:
+  securityGroupIds:
+    - sg-4eb1d829
+  subnetIds:
+    - subnet-fa441d9e
+    - subnet-2f4b1b59
+
+apiGatewayAliasUrl: app.qa.adesaglobal.com
+apiBasePath: awsservice
+apiGatewayDescription: awsservice Gateway
+
+gatewayResponseAllowOrigin: https://d2lgd50rrvrxyx.cloudfront.net
+gatewayResponseAllowHeaders: Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token
+gatewayResponseAllowMethods: GET,POST,PATCH,DELETE,PUT,OPTIONS
+
+kinesisDeliveryStreamName: ddb2es2
+firehoseBucketName: adesaworld-qa-kinesis
+elasticSearchDomain: adesaworld53
+elasticSearchIndex: vehicles
+elasticSearchType: vehicle

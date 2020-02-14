@@ -1,0 +1,18 @@
+region: eu-central-1
+
+vpc:
+  securityGroupIds:
+    - sg-cb7cd0a6
+  subnetIds:
+    - subnet-0227a6a8af620d7e9
+    - subnet-0a0010631c45a9642
+    - subnet-0e97327be03d7f9a4
+
+apiGatewayAliasUrl: app.demo.adesaglobal.com
+apiBasePath: awsservice
+apiGatewayDescription: awsservice Gateway
+
+gatewayResponseAllowOrigin: https://d2mqq4b6ypgamg.cloudfront.net
+gatewayResponseAllowHeaders: Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token
+gatewayResponseAllowMethods: GET,POST,PATCH,DELETE,PUT,OPTIONS
+

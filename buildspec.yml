@@ -1,0 +1,7 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - aws s3 cp s3://ag-deployment-artifacts/scripts/deploy_node.sh . --source-region eu-west-1
+      - /bin/bash deploy_node.sh

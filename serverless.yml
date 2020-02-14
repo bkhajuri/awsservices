@@ -1,0 +1,244 @@
+﻿service:
+  name: awsservice
+  
+custom:
+  dependsOn:
+    chains: 2
+  configFile: ${file(./configs/${self:provider.stage}.yml)}
+  serverless-aws-resource-names:
+    source: mapping.json
+  
+provider:
+  name: aws
+  runtime: nodejs6.10
+  stage: ${opt:stage, 'dev'}
+  stackName: ${self:service}-${opt:stage}
+  region: ${self:custom.configFile.region}
+  deploymentBucket:
+    name: sls-deployments-${self:provider.region}-${env:ACCOUNT_NUMBER}
+    serverSideEncryption: AES256
+  timeout: 60
+  logRetentionInDays: 30
+  versionFunctions: False
+  tracing: true
+  iamRoleStatements:
+  - Effect: Allow
+    Resource: "*"
+    Action:
+    - ssm:GetParameter
+  - Effect: Allow
+    Resource: '*'
+    Action:
+    - elasticache:*
+  - Effect: Allow
+    Resource: arn:aws:iam::*:role/aws-service-role/elasticache.amazonaws.com/AWSServiceRoleForElastiCache
+    Condition:
+      StringLike:
+        iam:AWSServiceName:
+        - elasticache.amazonaws.com
+    Action:
+    - iam:CreateServiceLinkedRole
+  - Effect: Allow
+    Resource: '*'
+    Action:
+    - cloudformation:DescribeChangeSet
+    - cloudformation:DescribeStackResources
+    - cloudformation:DescribeStacks
+    - cloudformation:GetTemplate
+    - cloudformation:ListStackResources
+    - cloudwatch:*
+    - cognito-identity:ListIdentityPools
+    - cognito-sync:GetCognitoEvents
+    - cognito-sync:SetCognitoEvents
+    - datapipeline:ActivatePipeline
+    - datapipeline:CreatePipeline
+    - datapipeline:DeletePipeline
+    - datapipeline:DescribeObjects
+    - datapipeline:DescribePipelines
+    - datapipeline:GetPipelineDefinition
+    - datapipeline:ListPipelines
+    - datapipeline:PutPipelineDefinition
+    - datapipeline:QueryObjects
+    - dax:*
+    - dynamodb:*
+    - ec2:DescribeSecurityGroups
+    - ec2:DescribeSubnets
+    - ec2:DescribeVpcs
+    - events:*
+    - iam:GetPolicy
+    - iam:GetPolicyVersion
+    - iam:GetRole
+    - iam:GetRolePolicy
+    - iam:ListAttachedRolePolicies
+    - iam:ListRolePolicies
+    - iam:ListRoles
+    - iam:PassRole
+    - iot:*
+    - kinesis:DescribeStream
+    - kinesis:ListStreams
+    - kinesis:PutRecord
+    - kms:ListAliases
+    - lambda:*
+    - logs:*
+    - s3:*
+    - sns:*
+    - sqs:ListQueues
+    - sqs:SendMessage
+    - tag:GetResources
+  - Effect: Allow
+    Resource: '*'
+    Action:
+    - xray:*
+  - Effect: Allow
+    Resource: '*'
+    Action:
+    - ec2:CreateNetworkInterface
+    - ec2:DescribeNetworkInterfaces
+    - ec2:DeleteNetworkInterface
+    - ec2:DescribeSecurityGroups
+  - Effect: Allow
+    Resource: '*'
+    Action:
+    - sns:*
+  - Effect: Allow
+    Resource: '*'
+    Action:
+    - lambda:*
+  - Effect: Allow
+    Resource: '*'
+    Action:
+    - iot:*
+  - Effect: Allow
+    Resource: '*'
+    Action:
+    - sts:AssumeRole
+  - Effect: Allow
+    Resource: '*'
+    Action:
+    - elasticache:*
+  - Effect: Allow
+    Resource: 'arn:aws:iam::*:role/aws-service-role/elasticache.amazonaws.com/AWSServiceRoleForElastiCache'
+    Action:
+    - iam:CreateServiceLinkedRole
+    Condition:
+      StringLike:
+        iam:AwsServiceName:
+          - elasticcache.amazonaws.com
+  - Effect: Allow
+    Resource: '*'
+    Action:
+    - es:*
+  - Effect: Allow
+    Resource: '*'
+    Action:
+    - firehose:PutRecord
+    
+package:
+  artifact: dist/package.zip
+  
+plugins:
+  - serverless-plugin-tracing
+  - serverless-dependson-plugin
+  - serverless-aws-resource-names
+
+resources:
+  Description: ${self:service}-${opt:stage}
+  Resources:
+      ApiGatewayRestApi:
+        Type: AWS::ApiGateway::RestApi
+        Properties:
+          Description: ${self:custom.configFile.apiGatewayDescription}
+          EndpointConfiguration:
+            Types:
+            - REGIONAL
+      ApiGatewayBasePathMapping:
+        Type: AWS::ApiGateway::BasePathMapping
+        Condition: aliasApigateway
+        Properties:
+          BasePath: ${self:custom.configFile.apiBasePath}
+          DomainName: ${self:custom.configFile.apiGatewayAliasUrl}
+          RestApiId:
+            Ref: ApiGatewayRestApi
+          Stage: ${opt:stage}
+      GatewayResponseDefault4XX:
+        Properties:
+          ResponseParameters:
+            gatewayresponse.header.Access-Control-Allow-Origin: "'${self:custom.configFile.gatewayResponseAllowOrigin}'"
+            gatewayresponse.header.Access-Control-Allow-Methods: "'${self:custom.configFile.gatewayResponseAllowMethods}'"
+            gatewayresponse.header.Access-Control-Allow-Headers: "'${self:custom.configFile.gatewayResponseAllowHeaders}'"
+          RestApiId:
+            Ref: ApiGatewayRestApi
+          ResponseType: DEFAULT_4XX
+        Type: AWS::ApiGateway::GatewayResponse
+  Conditions:
+    aliasApigateway:
+      Fn::Not:
+      - Fn::Equals:
+        - ${self:custom.configFile.apiGatewayAliasUrl}
+        - false
+  
+functions:
+  awsservice_essbackup:
+    handler: awsservice.essbackup
+    memorySize: 128
+    timeout: 180
+
+  awsservice_heartbeat:
+    handler: heartbeat.main
+    memorySize: 128
+    description: Check various services to make sure they are running
+    timeout: 240
+    vpc: ${self:custom.configFile.vpc}
+    events:
+    - schedule: rate(15 minutes)
+  
+  notifications-v1-auth:
+    handler: handler.auth
+    memorySize: 1024
+    timeout: 30
+    runtime: nodejs8.10
+    events:
+    - http:
+        cors:
+          headers:
+          - Content-Type
+          - X-Amz-Date
+          - Authorization
+          - X-Api-Key
+          - X-Amz-Security-Token
+          origin: '*'
+        path: /liveauction/initiatekeys
+        authorizer:
+          arn: arn:aws:lambda:${self:provider.region}:${env:ACCOUNT_NUMBER}:function:oktaauthservices-${opt:stage}-okta_custom_authorizer
+        method: GET
+    - http:
+        cors:
+          headers:
+          - Content-Type
+          - X-Amz-Date
+          - Authorization
+          - X-Api-Key
+          - X-Amz-Security-Token
+          origin: '*'
+        path: /
+        authorizer:
+          arn: arn:aws:lambda:${self:provider.region}:${env:ACCOUNT_NUMBER}:function:oktaauthservices-${opt:stage}-okta_custom_authorizer
+        method: GET
+    - http:
+        cors:
+          headers:
+          - Content-Type
+          - X-Amz-Date
+          - Authorization
+          - X-Api-Key
+          - X-Amz-Security-Token
+          origin: '*'
+        path: /liveauction
+        authorizer:
+          arn: arn:aws:lambda:${self:provider.region}:${env:ACCOUNT_NUMBER}:function:oktaauthservices-${opt:stage}-okta_custom_authorizer
+        method: GET
+
+  awsservice_loaddb2es:
+    handler: loadallddb2es.handler
+    memorySize: 1024
+    timeout: 300

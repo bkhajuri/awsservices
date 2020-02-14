@@ -1,0 +1,21 @@
+region: eu-west-1
+
+vpc:
+  securityGroupIds:
+    - sg-e980188e
+  subnetIds:
+    - subnet-cd34af95
+    - subnet-4a461f2e
+
+apiGatewayAliasUrl: app.dev.adesaglobal.com
+apiBasePath: awsservice
+apiGatewayDescription: awsservice Gateway
+
+gatewayResponseAllowOrigin: https://d3ami6i5fp5bbs.cloudfront.net
+gatewayResponseAllowHeaders: Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token
+gatewayResponseAllowMethods: GET,POST,PATCH,DELETE,PUT,OPTIONS
+
+kinesisDeliveryStreamName: ddb2es2
+elasticSearchDomain: adesaworld53
+elasticSearchIndex: vehicles
+elasticSearchType: vehcile
